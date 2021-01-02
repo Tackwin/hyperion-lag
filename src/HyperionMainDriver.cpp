@@ -97,46 +97,53 @@ void HyperionMainDriver::load_mesh()
   std::cout << "[Driver::load_mesh] Initializing a VTK unstructured grid\n";
 
   // Create VTK points
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   // Insert points from Gmsh node coordinates
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  auto points = vtkSmartPointer<vtkPoints>::New();
+  for (size_t i = 0; i < nodes.size(); i++) {
+    // what's up with the 1/0-indexing in gmsh ?
+    assert(nodes[i] > 0);
+    points->InsertPoint(nodes[i] - 1, coords.data() + i);
+  }
+
 
   // Create a VTK unstructured grid
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  m_mesh = vtkSmartPointer<vtkUnstructuredGrid>::New();
+  m_mesh->SetPoints(points);
 
   int nb_cells_to_allocate = 0;
+  // Not sure why we are doing twice the work here  ???
+  // Isn't getElementsByType a pure function ???
   {
     std::vector<std::size_t> cells;
     std::vector<std::size_t> nodes;
-    gmsh::model::mesh::getElementsByType(3, cells, nodes);
+    gmsh::model::mesh::getElementsByType(MSH_QUAD_4, cells, nodes);
+  for (auto& x : cells) assert(x > 0);
+  for (auto& x : nodes) assert(x > 0);
     nb_cells_to_allocate = cells.size();
   }
 
   // Allocate cells
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  m_mesh->Allocate(nb_cells_to_allocate);
+
 
   // Get global cells and nodes
   nodes.clear();
   std::vector<std::size_t> cells;
   gmsh::model::mesh::getElementsByType(MSH_QUAD_4, cells, nodes);
+  for (auto& x : cells) assert(x > 0);
+  for (auto& x : nodes) assert(x > 0);
+  for (auto& x : nodes) --x;
 
   for (std::size_t c = 0; c < cells.size(); ++c) {
     m_msh_vtk_cells[cells[c]] = c;
     m_vtk_msh_cells[c] = cells[c];
 
-    // Insert connectivites, i.e. nodes connected to a cell
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // Write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // whatever for now i am crossing finger for this cast. **on my machine**
+    // size_t and long long are the same signed altough not the same sign.
+    // not sure how we passed from triple of coordinate to quadruple coordinate but whatever.
+    m_mesh->InsertNextCell(VTK_QUAD, 4, (vtkIdType*)(nodes.data() + c * 4));
   }
 
   gmsh::finalize();

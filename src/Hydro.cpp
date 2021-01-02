@@ -32,6 +32,7 @@ void add_cell_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                     const std::vector<double>& field,
                     const std::string& field_name)
 {
+  vtkSmartPointer<vtkDoubleArray> vectors = vtkSmartPointer<vtkDoubleArray>::New();
   // Create a VTK double array, insert values and attach it to the mesh
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // TODO : write code here
@@ -89,11 +90,8 @@ void Hydro::init()
   // Load initial node coordinates
   for (int n = 0; n < m_vars->m_nb_nodes; ++n) {
     double coord[3];
-
-    // Get node n coordinates and save them to m_vars->m_node_coord
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    m_mesh->GetPoint(n, coord);
+    m_vars->m_node_coord.push_back({coord[0], coord[1]});
   }
 
   // Initialize cell volume
@@ -289,6 +287,10 @@ void Hydro::move_nodes()
   for (int n = 0; n < m_vars->m_nb_nodes; ++n) {
     m_vars->m_node_coord[n].first += m_dt * m_vars->m_velocity[n].first;
     m_vars->m_node_coord[n].second += m_dt * m_vars->m_velocity[n].second;
+
+    auto data = m_mesh->GetPoint(n);
+    data[0] = m_vars->m_node_coord[n].first;
+    data[1] = m_vars->m_node_coord[n].second;
     // Update m_mesh node positions
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // TODO : write code here
