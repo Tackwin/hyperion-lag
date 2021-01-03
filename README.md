@@ -21,3 +21,6 @@ In the test case directory, for example `test/sod`, run :
     /path/to/h2p sod2d.yaml
 
 VTK output files are produced in the current directory.
+
+
+Luca Bourroux
