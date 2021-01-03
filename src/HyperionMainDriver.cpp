@@ -102,8 +102,7 @@ void HyperionMainDriver::load_mesh()
   auto points = vtkSmartPointer<vtkPoints>::New();
   for (size_t i = 0; i < nodes.size(); i++) {
     // what's up with the 1/0-indexing in gmsh ?
-    assert(nodes[i] > 0);
-    points->InsertPoint(nodes[i] - 1, coords.data() + i);
+    points->InsertPoint(nodes[i] - 1, coords.data() + i * 3);
   }
 
 
@@ -119,8 +118,6 @@ void HyperionMainDriver::load_mesh()
     std::vector<std::size_t> cells;
     std::vector<std::size_t> nodes;
     gmsh::model::mesh::getElementsByType(MSH_QUAD_4, cells, nodes);
-  for (auto& x : cells) assert(x > 0);
-  for (auto& x : nodes) assert(x > 0);
     nb_cells_to_allocate = cells.size();
   }
 
@@ -132,8 +129,6 @@ void HyperionMainDriver::load_mesh()
   nodes.clear();
   std::vector<std::size_t> cells;
   gmsh::model::mesh::getElementsByType(MSH_QUAD_4, cells, nodes);
-  for (auto& x : cells) assert(x > 0);
-  for (auto& x : nodes) assert(x > 0);
   for (auto& x : nodes) --x;
 
   for (std::size_t c = 0; c < cells.size(); ++c) {
@@ -141,8 +136,7 @@ void HyperionMainDriver::load_mesh()
     m_vtk_msh_cells[c] = cells[c];
 
     // whatever for now i am crossing finger for this cast. **on my machine**
-    // size_t and long long are the same signed altough not the same sign.
-    // not sure how we passed from triple of coordinate to quadruple coordinate but whatever.
+    // size_t and long long are the same size altough not the same sign.
     m_mesh->InsertNextCell(VTK_QUAD, 4, (vtkIdType*)(nodes.data() + c * 4));
   }
 

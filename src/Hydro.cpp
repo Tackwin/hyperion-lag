@@ -33,9 +33,9 @@ void add_cell_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                     const std::string& field_name)
 {
   auto vectors = vtkSmartPointer<vtkDoubleArray>::New();
-  for (auto& x : field) vectors->InsertNextValue(x);
   vectors->SetName(field_name.c_str());
-  mesh->GetFieldData()->AddArray(vectors);
+  for (auto& x : field) vectors->InsertNextValue(x);
+  mesh->GetCellData()->AddArray(vectors);
 }
 
 //----------------------------------------------------------------------------
@@ -59,9 +59,10 @@ void add_vector_node_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                            const std::string& field_name)
 {
   auto vectors = vtkSmartPointer<vtkDoubleArray>::New();
+  vectors->SetNumberOfComponents(2);
   for (auto& [x, y] : field) vectors->InsertNextTuple2(x, y);
   vectors->SetName(field_name.c_str());
-  mesh->GetFieldData()->AddArray(vectors);
+  mesh->GetPointData()->AddArray(vectors);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -290,7 +291,7 @@ void Hydro::move_nodes()
     auto data = m_mesh->GetPoint(n);
     data[0] = m_vars->m_node_coord[n].first;
     data[1] = m_vars->m_node_coord[n].second;
-
+    m_mesh->GetPoints()->SetPoint(n, data);
 
     // >SEE(Tackwin):
     // I think it's updated i don't need to set it back ?
@@ -357,7 +358,10 @@ void Hydro::dump(int step, double simulation_time)
 
   // Attach the simulation time to the mesh
   // >SEE(Tackwin): isn't there a way to set this as a scalar and not an array ?
-  add_cell_field(m_mesh, {simulation_time}, "Simulation times");
+  auto vectors = vtkSmartPointer<vtkDoubleArray>::New();
+  vectors->SetName("Simulation times");
+  vectors->InsertNextValue(simulation_time);
+  m_mesh->GetCellData()->AddArray(vectors);
 
   add_cell_field(m_mesh, m_vars->m_pressure, "Pressure");
   add_cell_field(m_mesh, m_vars->m_artificial_viscosity, "ArtificialViscosity");
