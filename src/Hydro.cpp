@@ -32,11 +32,10 @@ void add_cell_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                     const std::vector<double>& field,
                     const std::string& field_name)
 {
-  vtkSmartPointer<vtkDoubleArray> vectors = vtkSmartPointer<vtkDoubleArray>::New();
-  // Create a VTK double array, insert values and attach it to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto vectors = vtkSmartPointer<vtkDoubleArray>::New();
+  for (auto& x : field) vectors->InsertNextValue(x);
+  vectors->SetName(field_name.c_str());
+  mesh->GetFieldData()->AddArray(vectors);
 }
 
 //----------------------------------------------------------------------------
@@ -46,10 +45,10 @@ void add_node_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                     const std::vector<double>& field,
                     const std::string& field_name)
 {
-  // Create a VTK double array, insert values and attach it to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto vectors = vtkSmartPointer<vtkDoubleArray>::New();
+  for (auto& x : field) vectors->InsertNextValue(x);
+  vectors->SetName(field_name.c_str());
+  mesh->GetFieldData()->AddArray(vectors);
 }
 
 //----------------------------------------------------------------------------
@@ -59,10 +58,10 @@ void add_vector_node_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                            const std::vector<std::pair<double, double>>& field,
                            const std::string& field_name)
 {
-  // Create a VTK double array, insert values and attach it to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto vectors = vtkSmartPointer<vtkDoubleArray>::New();
+  for (auto& [x, y] : field) vectors->InsertNextTuple2(x, y);
+  vectors->SetName(field_name.c_str());
+  mesh->GetFieldData()->AddArray(vectors);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -353,6 +352,13 @@ void Hydro::dump(int step, double simulation_time)
 {
   std::cout << "[Hydro::dump] Iteration " << step << " -- Time : "
     << simulation_time << " s -- Time step : " << m_dt << " s\n";
+
+
+
+  auto times = vtkSmartPointer<vtkDoubleArray>(vtkDoubleArray::New());
+  times->SetName("Simulation times");
+  times->InsertNextValue(simulation_time);
+  m_mesh->GetFieldData()->AddArray(times);
 
   // Attach the simulation time to the mesh
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
