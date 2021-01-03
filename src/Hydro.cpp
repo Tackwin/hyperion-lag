@@ -102,12 +102,11 @@ void Hydro::init()
     double node_mass_contrib = 0.25 * m_vars->m_cell_mass[c];
 
     // Get cell c to retrieve its node ids
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    int nb_nodes_for_cell = 1; // Change this line to get the correct number of nodes
+    auto list = vtkSmartPointer<vtkIdList>::New();
+    m_mesh->GetCellPoints(c, list);
+    int nb_nodes_for_cell = 4; // Change this line to get the correct number of nodes
     for (int n = 0; n < nb_nodes_for_cell; ++n) {
-      auto node = n; // Change this line to get the global node id
+      auto node = list->GetId(n); // Change this line to get the global node id
       m_vars->m_node_mass[node] += node_mass_contrib;
     }
   }
@@ -135,17 +134,15 @@ void Hydro::compute_volume()
 
     // Cache local coordinates;
 
+    auto node_id_list = vtkSmartPointer<vtkIdList>::New();
+    m_mesh->GetCellPoints(c, node_id_list);
+
     // Get cell c to retrieve its nodes
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    int nb_nodes_of_cell = 1; // Change this line to get the correct number of nodes
+    int nb_nodes_of_cell = 4; // Change this line to get the correct number of nodes
     for (int n = 0; n < nb_nodes_of_cell; ++n) {
       double p[3];
-      // Get node n coordinates
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // TODO : write code here
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      m_mesh->GetPoint(node_id_list->GetId(n), p);
       coord[n] = std::make_pair(p[0], p[1]);
     }
 
@@ -195,12 +192,14 @@ void Hydro::compute_pressure_force()
 
   for (int c = 0; c < m_vars->m_nb_cells; ++c) {
     // Get cell c to retrieve its node ids
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    int nb_nodes_for_cell = 1; // Change this line to get the correct number of nodes
+
+    // >SEE(Tackwin):
+    // isn't there a way to allocate this once and clear it ??
+    auto list = vtkSmartPointer<vtkIdList>::New();
+    m_mesh->GetCellPoints(c, list);
+    int nb_nodes_for_cell = 4; // Change this line to get the correct number of nodes
     for (int n = 0; n < nb_nodes_for_cell; ++n) {
-      auto node = n; // Change this line to get the global node id
+      auto node = list->GetId(n); // Change this line to get the global node id
       double force = m_vars->m_pressure[c] +
                      m_vars->m_artificial_viscosity[c] * 20.0;
       m_vars->m_force[node].first += force * m_vars->m_cqs[c][n].first;
@@ -287,13 +286,14 @@ void Hydro::move_nodes()
     m_vars->m_node_coord[n].first += m_dt * m_vars->m_velocity[n].first;
     m_vars->m_node_coord[n].second += m_dt * m_vars->m_velocity[n].second;
 
+    // Update m_mesh node positions
     auto data = m_mesh->GetPoint(n);
     data[0] = m_vars->m_node_coord[n].first;
     data[1] = m_vars->m_node_coord[n].second;
-    // Update m_mesh node positions
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+    // >SEE(Tackwin):
+    // I think it's updated i don't need to set it back ?
   }
 }
 
@@ -355,15 +355,9 @@ void Hydro::dump(int step, double simulation_time)
 
 
 
-  auto times = vtkSmartPointer<vtkDoubleArray>(vtkDoubleArray::New());
-  times->SetName("Simulation times");
-  times->InsertNextValue(simulation_time);
-  m_mesh->GetFieldData()->AddArray(times);
-
   // Attach the simulation time to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // >SEE(Tackwin): isn't there a way to set this as a scalar and not an array ?
+  add_cell_field(m_mesh, {simulation_time}, "Simulation times");
 
   add_cell_field(m_mesh, m_vars->m_pressure, "Pressure");
   add_cell_field(m_mesh, m_vars->m_artificial_viscosity, "ArtificialViscosity");
@@ -379,9 +373,9 @@ void Hydro::dump(int step, double simulation_time)
   std::string file_name = "HydroLag." + std::to_string(step) + ".vtu";
 
   // Write the solutions to file_name
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  m_writer->SetFileName(file_name.c_str());
+  m_writer->SetInputData(m_mesh);
+  m_writer->Write();
 }
 
 /*---------------------------------------------------------------------------*/
