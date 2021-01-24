@@ -170,6 +170,12 @@ int HyperionMainDriver::run()
     auto loop_start_time = std::chrono::high_resolution_clock::now();
 
     bool last_iteration = (simulation_time == final_time + hydro->dt());
+
+#ifdef ANALIZE_INSITY
+  hydro->analyze_insitu(simulation_time, step, last_iteration);
+#else
+  hydro->dump(step, simulation_time);
+#endif
     // TODO: if ANALYZE_INSITU, then call the appropriate method, else call dump
 
     hydro->compute_pressure_force();
